@@ -73,7 +73,7 @@ public class ShaXSumDriverTest {
         testJson.add("contacts", contacts);
         testJson.add("affinity", new JsonObject());
         testJson.add("adjunct", new JsonArray());
-        ShaXSumDriver shaXSumDriver = new ShaXSumDriver("SHA-256", testJson);
+        ShaXSumDriver shaXSumDriver = new GsonShaXSumDriver("SHA-256", testJson);
         String actualSha = shaXSumDriver.takeShaOfJsonObject();
         System.out.println("Actual Sha: " + actualSha);
         String expectedShaBasedOnThis =
@@ -111,7 +111,7 @@ public class ShaXSumDriverTest {
     void shouldReturnCachedWhenTryToComputeTwice() {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("key", "value");
-        ShaXSumDriver shaXSumDriver = new ShaXSumDriver("SHA-256", jsonObject);
+        ShaXSumDriver shaXSumDriver = new GsonShaXSumDriver("SHA-256", jsonObject);
         String sha = shaXSumDriver.takeShaOfJsonObject();
         String shouldEqualSha = shaXSumDriver.takeShaOfJsonObject();
         Assertions.assertEquals(shouldEqualSha, sha);
@@ -123,7 +123,7 @@ public class ShaXSumDriverTest {
         try {
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("key", "value");
-            new ShaXSumDriver("Funny-Hash", jsonObject);
+            new GsonShaXSumDriver("Funny-Hash", jsonObject);
         } catch(ShaXSumDriverException shxDex) {
             Assertions.assertEquals("Funny-Hash algorithm is not available", shxDex.getMessage());
             caught = true;

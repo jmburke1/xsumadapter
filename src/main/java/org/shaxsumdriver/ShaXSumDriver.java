@@ -4,9 +4,6 @@
  */
 package org.shaxsumdriver;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -14,75 +11,100 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HexFormat;
 
-public class ShaXSumDriver {
-    private final JsonObject takingShaOfThis;
-    private JsonElement topLevelSingletonPath;
+public abstract class ShaXSumDriver<Q> {
+    private final Q takingShaOfThis;
+    private Q topLevelSingletonPath;
     private final MessageDigest messageDigest;
     private String cached;
 
-    public ShaXSumDriver(String algorithmName, JsonObject takeShaOfThis) {
+    public ShaXSumDriver(String algorithmName, Q takeShaOfThis) {
         cached = null;
         messageDigest = newDigest(algorithmName);
         takingShaOfThis = takeShaOfThis;
     }
 
     /**
-     * Recursively visits a JsonElement and incrementally computes a message digest
+     * Recursively visits a Q and incrementally computes a message digest
      */
-    /* Note: This traversal intentionally mutates a shared in-progress JsonElement tree.
+    /* Note: This traversal intentionally mutates a shared in-progress Q tree.
      * Keep execution single-threaded; do not parallelize this with ForkJoinPool/parallel streams.
      */
     public String takeShaOfJsonObject() {
         if(cached != null) {
             return cached;
         }
-        topLevelSingletonPath = new JsonObject();
+        topLevelSingletonPath = createNewJsonObject();
         traverse(takingShaOfThis, topLevelSingletonPath);
         cached = HexFormat.of().formatHex(messageDigest.digest());
         return cached;
     }
 
-    private void traverse(JsonElement element, JsonElement currentSingletonPath) {
-        if(element.isJsonObject()) {
-            JsonObject obj = element.getAsJsonObject();
-            JsonObject singletonPathAsObj = currentSingletonPath.getAsJsonObject();
-            String[] sorted = new String[obj.keySet().size()];
-            int keyCount = 0;
-            for(String key : obj.keySet()) {
-                sorted[keyCount++] = key;
-            }
+    protected abstract Q createNewJsonObject();
+
+    protected abstract boolean shouldTreatLikeJsonObject(Q q);
+
+    protected abstract boolean shouldTreatLikeJsonArray(Q q);
+
+    protected abstract boolean shouldTreatLikePrimitiveOrJsonNull(Q q);
+
+    protected abstract String[] pullKeysFromJsonObject(Q q);
+
+    protected abstract Q getBasedOnKey(String key, Q q);
+
+    protected abstract void removeBasedOnKey(String key, Q q);
+
+    protected abstract void addNewJsonObjectToJsonObject(Q currentSingletonPath, String key);
+
+    protected abstract void addNewJsonArrayToJsonObject(Q currentSingletonPath, String key);
+
+    protected abstract void addPrimitiveOrJsonNullToJsonObject(Q currentSingletonPath, String key, Q value);
+
+    protected abstract int getArraySize(Q element);
+
+    protected abstract Q getBasedOnIndex(int index, Q q);
+
+    protected abstract void addNewJsonObjectToJsonArray(Q currentSingletonPath);
+
+    protected abstract void addNewJsonArrayToJsonArray(Q currentSingletonPath);
+
+    protected abstract void addPrimitiveOrJsonNullToJsonArray(Q currentSingletonPath, Q value);
+
+    protected abstract void removeZerothItem(Q q);
+
+    private void traverse(Q element, Q currentSingletonPath) {
+        if(shouldTreatLikeJsonObject(element)) {
+            String[] sorted = pullKeysFromJsonObject(element);
             Arrays.sort(sorted);
             for(String key : sorted) {
-                JsonElement value = obj.get(key);
-                if(value.isJsonObject()) {
-                    singletonPathAsObj.add(key, new JsonObject());
-                } else if(value.isJsonArray()) {
-                    singletonPathAsObj.add(key, new JsonArray());
-                } else if(value.isJsonPrimitive() || value.isJsonNull()) {
-                    singletonPathAsObj.add(key, value);
+                Q value = getBasedOnKey(key, element);
+                if(shouldTreatLikeJsonObject(value)) {
+                    addNewJsonObjectToJsonObject(currentSingletonPath, key);
+                } else if(shouldTreatLikeJsonArray(value)) {
+                    addNewJsonArrayToJsonObject(currentSingletonPath, key);
+                } else if(shouldTreatLikePrimitiveOrJsonNull(value)) {
+                    addPrimitiveOrJsonNullToJsonObject(currentSingletonPath, key, value);
                 }
-                traverse(value, singletonPathAsObj.get(key));
-                singletonPathAsObj.remove(key);
+                traverse(value, getBasedOnKey(key, currentSingletonPath));
+                removeBasedOnKey(key, currentSingletonPath);
             }
             if(sorted.length == 0) {
                 messageDigest.update(topLevelSingletonPath.toString().getBytes(StandardCharsets.UTF_8));
             }
-        } else if(element.isJsonArray()) {
-            JsonArray arr = element.getAsJsonArray();
-            JsonArray singletonPathAsArr = currentSingletonPath.getAsJsonArray();
-            for(int i = 0; i < arr.size(); i++) {
-                JsonElement item = arr.get(i);
-                if(item.isJsonObject()) {
-                    singletonPathAsArr.add(new JsonObject());
-                } else if(item.isJsonArray()) {
-                    singletonPathAsArr.add(new JsonArray());
-                } else if(item.isJsonPrimitive() || item.isJsonNull()) {
-                    singletonPathAsArr.add(item);
+        } else if(shouldTreatLikeJsonArray(element)) {
+            int arrSize = getArraySize(element);
+            for(int i = 0; i < arrSize; i++) {
+                Q item = getBasedOnIndex(i, element);
+                if(shouldTreatLikeJsonObject(item)) {
+                    addNewJsonObjectToJsonArray(currentSingletonPath);
+                } else if(shouldTreatLikeJsonArray(item)) {
+                    addNewJsonArrayToJsonArray(currentSingletonPath);
+                } else if(shouldTreatLikePrimitiveOrJsonNull(item)) {
+                    addPrimitiveOrJsonNullToJsonArray(currentSingletonPath, item);
                 }
-                traverse(item, singletonPathAsArr.get(0));
-                singletonPathAsArr.remove(0);
+                traverse(item, getBasedOnIndex(0, currentSingletonPath));
+                removeZerothItem(currentSingletonPath);
             }
-            if(arr.size() == 0) {
+            if(arrSize == 0) {
                 messageDigest.update(topLevelSingletonPath.toString().getBytes(StandardCharsets.UTF_8));
             }
         } else {
