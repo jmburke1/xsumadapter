@@ -71,6 +71,8 @@ public abstract class GenericRecursiveShaXSumDriver<Q> implements ShaXSumDriver 
 
     protected abstract void removeZerothItem(Q q);
 
+    protected abstract String getAsMinifiedString(Q q);
+
     private void traverse(Q element, Q currentSingletonPath) {
         if(shouldTreatLikeJsonObject(element)) {
             String[] sorted = pullKeysFromJsonObject(element);
@@ -88,7 +90,7 @@ public abstract class GenericRecursiveShaXSumDriver<Q> implements ShaXSumDriver 
                 removeBasedOnKey(key, currentSingletonPath);
             }
             if(sorted.length == 0) {
-                messageDigest.update(topLevelSingletonPath.toString().getBytes(StandardCharsets.UTF_8));
+                messageDigest.update(getAsMinifiedString(topLevelSingletonPath).getBytes(StandardCharsets.UTF_8));
             }
         } else if(shouldTreatLikeJsonArray(element)) {
             int arrSize = getArraySize(element);
@@ -105,10 +107,10 @@ public abstract class GenericRecursiveShaXSumDriver<Q> implements ShaXSumDriver 
                 removeZerothItem(currentSingletonPath);
             }
             if(arrSize == 0) {
-                messageDigest.update(topLevelSingletonPath.toString().getBytes(StandardCharsets.UTF_8));
+                messageDigest.update(getAsMinifiedString(topLevelSingletonPath).getBytes(StandardCharsets.UTF_8));
             }
         } else {
-            messageDigest.update(topLevelSingletonPath.toString().getBytes(StandardCharsets.UTF_8));
+            messageDigest.update(getAsMinifiedString(topLevelSingletonPath).getBytes(StandardCharsets.UTF_8));
         }
     }
     private static MessageDigest newDigest(String algorithmName) {

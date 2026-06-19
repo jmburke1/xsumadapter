@@ -102,4 +102,9 @@ public class OrgJSONShaXSumDriver extends GenericRecursiveShaXSumDriver<Object> 
     protected void removeZerothItem(Object jsonElement) {
         ((JSONArray)jsonElement).remove(0);
     }
+
+    @Override
+    protected String getAsMinifiedString(Object jsonElement) {
+        return jsonElement.toString();
+    }
 }

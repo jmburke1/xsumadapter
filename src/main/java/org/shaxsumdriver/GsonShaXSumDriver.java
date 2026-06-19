@@ -99,4 +99,9 @@ public class GsonShaXSumDriver extends GenericRecursiveShaXSumDriver<JsonElement
     protected void removeZerothItem(JsonElement jsonElement) {
         jsonElement.getAsJsonArray().remove(0);
     }
+
+    @Override
+    protected String getAsMinifiedString(JsonElement jsonElement) {
+        return jsonElement.toString();
+    }
 }
