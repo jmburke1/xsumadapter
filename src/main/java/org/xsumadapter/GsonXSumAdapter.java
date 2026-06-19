@@ -2,15 +2,15 @@
  * SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Jason Burke
  */
-package org.shaxsumdriver;
+package org.xsumadapter;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-public class GsonShaXSumDriver extends GenericRecursiveShaXSumDriver<JsonElement> {
+public class GsonXSumAdapter extends GenericRecursiveXSumAdapter<JsonElement> {
 
-    public GsonShaXSumDriver(String algorithmName, JsonElement takeShaOfThis) {
+    public GsonXSumAdapter(String algorithmName, JsonElement takeShaOfThis) {
         super(algorithmName, takeShaOfThis);
     }
 
@@ -51,7 +51,7 @@ public class GsonShaXSumDriver extends GenericRecursiveShaXSumDriver<JsonElement
     }
 
     @Override
-    protected void removeBasedOnKey(String key, JsonElement jsonElement) {
+    protected void removeFromSingletonPathByKey(String key, JsonElement jsonElement) {
         jsonElement.getAsJsonObject().remove(key);
     }
 
@@ -96,7 +96,7 @@ public class GsonShaXSumDriver extends GenericRecursiveShaXSumDriver<JsonElement
     }
 
     @Override
-    protected void removeZerothItem(JsonElement jsonElement) {
+    protected void removeFromSingletonPathArray(JsonElement jsonElement) {
         jsonElement.getAsJsonArray().remove(0);
     }
 

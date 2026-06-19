@@ -2,14 +2,16 @@
  * SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Jason Burke
  */
-package org.shaxsumdriver;
+package org.xsumadapter;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class OrgJSONShaXSumDriver extends GenericRecursiveShaXSumDriver<Object> {
+public class OrgJSONXSumAdapter extends GenericRecursiveXSumAdapter<Object> {
 
-    public OrgJSONShaXSumDriver(String algorithmName, Object takeShaOfThis) {
+    private static final Object JSON_NULL_SENTINEL = new JSONObject("{\"x\":null}").get("x");
+
+    public OrgJSONXSumAdapter(String algorithmName, Object takeShaOfThis) {
         super(algorithmName, takeShaOfThis);
     }
 
@@ -30,9 +32,8 @@ public class OrgJSONShaXSumDriver extends GenericRecursiveShaXSumDriver<Object> 
 
     @Override
     protected boolean shouldTreatLikePrimitiveOrJsonNull(Object jsonElement) {
-        JSONObject dummyNullProperty = new JSONObject("{\"whatever\": null}");
         return
-                jsonElement == null || dummyNullProperty.get("whatever").equals(jsonElement) ||
+                jsonElement == null || JSON_NULL_SENTINEL.equals(jsonElement) ||
                 jsonElement instanceof Boolean || jsonElement instanceof Character ||
                 jsonElement instanceof Number || jsonElement instanceof String;
     }
@@ -54,7 +55,7 @@ public class OrgJSONShaXSumDriver extends GenericRecursiveShaXSumDriver<Object> 
     }
 
     @Override
-    protected void removeBasedOnKey(String key, Object jsonElement) {
+    protected void removeFromSingletonPathByKey(String key, Object jsonElement) {
         ((JSONObject)jsonElement).remove(key);
     }
 
@@ -99,7 +100,7 @@ public class OrgJSONShaXSumDriver extends GenericRecursiveShaXSumDriver<Object> 
     }
 
     @Override
-    protected void removeZerothItem(Object jsonElement) {
+    protected void removeFromSingletonPathArray(Object jsonElement) {
         ((JSONArray)jsonElement).remove(0);
     }
 

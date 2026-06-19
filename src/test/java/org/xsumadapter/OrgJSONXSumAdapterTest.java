@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Jason Burke
  */
-package org.shaxsumdriver;
+package org.xsumadapter;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -14,10 +14,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
-public class OrgJSONShaXSumDriverTest {
+public class OrgJSONXSumAdapterTest {
 
     @Test
-    void shouldTakeShaDeterministically() {
+    void shouldTakeHashDeterministically() {
         // Build a complex nested JSON with various types
         JSONObject testJson = new JSONObject();
         testJson.put("name", "John Doe");
@@ -72,9 +72,9 @@ public class OrgJSONShaXSumDriverTest {
         testJson.put("affinity", new JSONObject());
         testJson.put("adjunct", new JSONArray());
         testJson = new JSONObject(testJson.toString().replace("\"CROATOAN\"", "null"));
-        ShaXSumDriver shaXSumDriver = new OrgJSONShaXSumDriver("SHA-256", testJson);
-        String actualSha = shaXSumDriver.takeShaOfJsonObject();
-        String expectedShaBasedOnThis =
+        XSumAdapter xSumAdapter = new OrgJSONXSumAdapter("SHA-256", testJson);
+        String actualHash = xSumAdapter.takeHashOfJsonObject();
+        String expectedHashBasedOnThis =
                 "{\"address\":{\"city\":\"New York\"}}" +
                 "{\"address\":{\"street\":\"123 Main St\"}}" +
                 "{\"address\":{\"zipCode\":\"10001\"}}" +
@@ -97,19 +97,19 @@ public class OrgJSONShaXSumDriverTest {
                 "{\"isActive\":true}" +
                 "{\"name\":\"John Doe\"}";
         MessageDigest expectedMessageDigest = newDigestForUnitTest("SHA-256");
-        expectedMessageDigest.update(expectedShaBasedOnThis.getBytes(StandardCharsets.UTF_8));
-        String expectedSha = HexFormat.of().formatHex(expectedMessageDigest.digest());
-        Assertions.assertEquals(expectedSha, actualSha);
+        expectedMessageDigest.update(expectedHashBasedOnThis.getBytes(StandardCharsets.UTF_8));
+        String expectedHash = HexFormat.of().formatHex(expectedMessageDigest.digest());
+        Assertions.assertEquals(expectedHash, actualHash);
     }
 
     @Test
     void shouldReturnCachedWhenTryToComputeTwice() {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("key", "value");
-        ShaXSumDriver shaXSumDriver = new OrgJSONShaXSumDriver("SHA-256", jsonObject);
-        String sha = shaXSumDriver.takeShaOfJsonObject();
-        String shouldEqualSha = shaXSumDriver.takeShaOfJsonObject();
-        Assertions.assertEquals(shouldEqualSha, sha);
+        XSumAdapter xSumAdapter = new OrgJSONXSumAdapter("SHA-256", jsonObject);
+        String hash = xSumAdapter.takeHashOfJsonObject();
+        String shouldEqualHash = xSumAdapter.takeHashOfJsonObject();
+        Assertions.assertEquals(shouldEqualHash, hash);
     }
 
     @Test
@@ -118,9 +118,9 @@ public class OrgJSONShaXSumDriverTest {
         try {
             JSONObject jsonObject = new JSONObject();
             jsonObject.put("key", "value");
-            new OrgJSONShaXSumDriver("Funny-Hash", jsonObject);
-        } catch(ShaXSumDriverException shxDex) {
-            Assertions.assertEquals("Funny-Hash algorithm is not available", shxDex.getMessage());
+            new OrgJSONXSumAdapter("Funny-Hash", jsonObject);
+        } catch(XSumAdapterException xAdEx) {
+            Assertions.assertEquals("Funny-Hash algorithm is not available", xAdEx.getMessage());
             caught = true;
         }
         Assertions.assertTrue(caught);
@@ -130,7 +130,7 @@ public class OrgJSONShaXSumDriverTest {
         try {
             return MessageDigest.getInstance(algorithmName);
         } catch (NoSuchAlgorithmException nsae) {
-            throw new ShaXSumDriverException(String.format("%s algorithm is not available", algorithmName), nsae);
+            throw new XSumAdapterException(String.format("%s algorithm is not available", algorithmName), nsae);
         }
     }
 }

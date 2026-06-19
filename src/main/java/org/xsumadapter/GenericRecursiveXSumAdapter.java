@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Jason Burke
  */
-package org.shaxsumdriver;
+package org.xsumadapter;
 
 
 import java.nio.charset.StandardCharsets;
@@ -11,25 +11,31 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HexFormat;
 
-public abstract class GenericRecursiveShaXSumDriver<Q> implements ShaXSumDriver {
+public abstract class GenericRecursiveXSumAdapter<Q> implements XSumAdapter {
     private final Q takingShaOfThis;
     private Q topLevelSingletonPath;
     private final MessageDigest messageDigest;
     private String cached;
 
-    public GenericRecursiveShaXSumDriver(String algorithmName, Q takeShaOfThis) {
+    public GenericRecursiveXSumAdapter(String algorithmName, Q takeShaOfThis) {
         cached = null;
         messageDigest = newDigest(algorithmName);
         takingShaOfThis = takeShaOfThis;
     }
 
     /**
-     * Recursively visits a Q and incrementally computes a message digest
+     * Recursively visits the JSON tree and incrementally computes a message digest.
+     *
+     * <p>Maintains a "singleton path" invariant: at each recursion depth, currentSingletonPath
+     * contains exactly one element per level - mirroring the current position in the input tree.
+     * The topLevelSingletonPath is the root of this singleton path; currentSingletonPath is always
+     * a descendant reference within it. Modifications to currentSingletonPath (add/remove) propagate
+     * up to topLevelSingletonPath because they are the same object graph.</p>
+     *
+     * <p>Keep execution single-threaded; do not parallelize this with ForkJoinPool/parallel streams or
+     * any other form of java multithreading.</p>
      */
-    /* Note: This traversal intentionally mutates a shared in-progress Q tree.
-     * Keep execution single-threaded; do not parallelize this with ForkJoinPool/parallel streams.
-     */
-    public String takeShaOfJsonObject() {
+    public String takeHashOfJsonObject() {
         if(cached != null) {
             return cached;
         }
@@ -51,7 +57,11 @@ public abstract class GenericRecursiveShaXSumDriver<Q> implements ShaXSumDriver 
 
     protected abstract Q getBasedOnKey(String key, Q q);
 
-    protected abstract void removeBasedOnKey(String key, Q q);
+    /**
+     * Removes a key from the singleton path after its subtree has been fully traversed.
+     * This maintains the invariant that currentSingletonPath contains exactly one element per level.
+     */
+    protected abstract void removeFromSingletonPathByKey(String key, Q q);
 
     protected abstract void addNewJsonObjectToJsonObject(Q currentSingletonPath, String key);
 
@@ -69,7 +79,11 @@ public abstract class GenericRecursiveShaXSumDriver<Q> implements ShaXSumDriver 
 
     protected abstract void addPrimitiveOrJsonNullToJsonArray(Q currentSingletonPath, Q value);
 
-    protected abstract void removeZerothItem(Q q);
+    /**
+     * Removes the zeroth item from the singleton path's current array after its element has been fully traversed.
+     * This maintains the invariant that the singleton path contains exactly one element per level.
+     */
+    protected abstract void removeFromSingletonPathArray(Q q);
 
     protected abstract String getAsMinifiedString(Q q);
 
@@ -87,7 +101,7 @@ public abstract class GenericRecursiveShaXSumDriver<Q> implements ShaXSumDriver 
                     addPrimitiveOrJsonNullToJsonObject(currentSingletonPath, key, value);
                 }
                 traverse(value, getBasedOnKey(key, currentSingletonPath));
-                removeBasedOnKey(key, currentSingletonPath);
+                removeFromSingletonPathByKey(key, currentSingletonPath);
             }
             if(sorted.length == 0) {
                 messageDigest.update(getAsMinifiedString(topLevelSingletonPath).getBytes(StandardCharsets.UTF_8));
@@ -104,7 +118,7 @@ public abstract class GenericRecursiveShaXSumDriver<Q> implements ShaXSumDriver 
                     addPrimitiveOrJsonNullToJsonArray(currentSingletonPath, item);
                 }
                 traverse(item, getBasedOnIndex(0, currentSingletonPath));
-                removeZerothItem(currentSingletonPath);
+                removeFromSingletonPathArray(currentSingletonPath);
             }
             if(arrSize == 0) {
                 messageDigest.update(getAsMinifiedString(topLevelSingletonPath).getBytes(StandardCharsets.UTF_8));
@@ -117,7 +131,7 @@ public abstract class GenericRecursiveShaXSumDriver<Q> implements ShaXSumDriver 
         try {
             return MessageDigest.getInstance(algorithmName);
         } catch (NoSuchAlgorithmException nsae) {
-            throw new ShaXSumDriverException(String.format("%s algorithm is not available", algorithmName), nsae);
+            throw new XSumAdapterException(String.format("%s algorithm is not available", algorithmName), nsae);
         }
     }
 }
