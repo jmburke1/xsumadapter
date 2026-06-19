@@ -8,7 +8,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-public class GsonShaXSumDriver extends ShaXSumDriver<JsonElement> {
+public class GsonShaXSumDriver extends GenericRecursiveShaXSumDriver<JsonElement> {
 
     public GsonShaXSumDriver(String algorithmName, JsonElement takeShaOfThis) {
         super(algorithmName, takeShaOfThis);
