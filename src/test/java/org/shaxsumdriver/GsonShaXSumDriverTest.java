@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Assertions;
 
 import org.junit.jupiter.api.Test;
 
-public class ShaXSumDriverTest {
+public class GsonShaXSumDriverTest {
 
     @Test
     void shouldTakeShaDeterministically() {
