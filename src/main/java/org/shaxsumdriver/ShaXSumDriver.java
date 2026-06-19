@@ -15,13 +15,15 @@ import java.util.Arrays;
 import java.util.HexFormat;
 
 public class ShaXSumDriver {
+    private final JsonObject takingShaOfThis;
     private JsonElement topLevelSingletonPath;
     private final MessageDigest messageDigest;
-    private boolean eligible;
+    private String cached;
 
-    public ShaXSumDriver(String algorithmName) {
-        eligible = true;
+    public ShaXSumDriver(String algorithmName, JsonObject takeShaOfThis) {
+        cached = null;
         messageDigest = newDigest(algorithmName);
+        takingShaOfThis = takeShaOfThis;
     }
 
     /**
@@ -30,14 +32,14 @@ public class ShaXSumDriver {
     /* Note: This traversal intentionally mutates a shared in-progress JsonElement tree.
      * Keep execution single-threaded; do not parallelize this with ForkJoinPool/parallel streams.
      */
-    public String takeShaOfJsonObject(JsonObject jsonObject) {
-        if(!eligible) {
-            throw new ShaXSumDriverException("Must construct a new ShaXSum Driver after computing once");
+    public String takeShaOfJsonObject() {
+        if(cached != null) {
+            return cached;
         }
-        eligible = false;
         topLevelSingletonPath = new JsonObject();
-        traverse(jsonObject, topLevelSingletonPath);
-        return HexFormat.of().formatHex(messageDigest.digest());
+        traverse(takingShaOfThis, topLevelSingletonPath);
+        cached = HexFormat.of().formatHex(messageDigest.digest());
+        return cached;
     }
 
     private void traverse(JsonElement element, JsonElement currentSingletonPath) {
