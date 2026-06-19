@@ -35,7 +35,6 @@ public abstract class GenericRecursiveShaXSumDriver<Q> implements ShaXSumDriver 
         }
         topLevelSingletonPath = createNewJsonObject();
         traverse(takingShaOfThis, topLevelSingletonPath);
-        System.out.println();
         cached = HexFormat.of().formatHex(messageDigest.digest());
         return cached;
     }
@@ -89,7 +88,6 @@ public abstract class GenericRecursiveShaXSumDriver<Q> implements ShaXSumDriver 
                 removeBasedOnKey(key, currentSingletonPath);
             }
             if(sorted.length == 0) {
-                System.out.print(topLevelSingletonPath);
                 messageDigest.update(topLevelSingletonPath.toString().getBytes(StandardCharsets.UTF_8));
             }
         } else if(shouldTreatLikeJsonArray(element)) {
@@ -107,11 +105,9 @@ public abstract class GenericRecursiveShaXSumDriver<Q> implements ShaXSumDriver 
                 removeZerothItem(currentSingletonPath);
             }
             if(arrSize == 0) {
-                System.out.print(topLevelSingletonPath);
                 messageDigest.update(topLevelSingletonPath.toString().getBytes(StandardCharsets.UTF_8));
             }
         } else {
-            System.out.print(topLevelSingletonPath);
             messageDigest.update(topLevelSingletonPath.toString().getBytes(StandardCharsets.UTF_8));
         }
     }

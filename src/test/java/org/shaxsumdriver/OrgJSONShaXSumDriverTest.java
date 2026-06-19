@@ -74,7 +74,6 @@ public class OrgJSONShaXSumDriverTest {
         testJson = new JSONObject(testJson.toString().replace("\"CROATOAN\"", "null"));
         ShaXSumDriver shaXSumDriver = new OrgJSONShaXSumDriver("SHA-256", testJson);
         String actualSha = shaXSumDriver.takeShaOfJsonObject();
-        System.out.println("Actual Sha: " + actualSha);
         String expectedShaBasedOnThis =
                 "{\"address\":{\"city\":\"New York\"}}" +
                 "{\"address\":{\"street\":\"123 Main St\"}}" +
@@ -97,9 +96,6 @@ public class OrgJSONShaXSumDriverTest {
                 "{\"hobbies\":[42]}" +
                 "{\"isActive\":true}" +
                 "{\"name\":\"John Doe\"}";
-        System.out.println("************************");
-        System.out.println(testJson);
-        System.out.println("************************");
         MessageDigest expectedMessageDigest = newDigestForUnitTest("SHA-256");
         expectedMessageDigest.update(expectedShaBasedOnThis.getBytes(StandardCharsets.UTF_8));
         String expectedSha = HexFormat.of().formatHex(expectedMessageDigest.digest());
